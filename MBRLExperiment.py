@@ -24,7 +24,7 @@ def run_repetition(
     rewards_arr = []
     s = env.reset()
     counter = 0
-    for n_timestep in range(n_timesteps):
+    for n_timestep in tqdm(range(n_timesteps), desc="repetition"):
         a = agent.select_action(s, kwargs["epsilon"])
         s_next, r, done = env.step(a)
         agent.update(s, a, r, done, s_next, kwargs["n_planning_updates"])
@@ -42,6 +42,7 @@ def run_repetition(
     env.reset()
     return np.array(rewards_arr)
 
+
 def run_repetitions(
         env,
         agent_type: str,
@@ -52,7 +53,7 @@ def run_repetitions(
         **kwargs
 ) -> np.ndarray:
     curve = np.zeros((n_timesteps - 1) // eval_interval + 1)
-    for _ in tqdm(range(n_repetitions)):
+    for _ in tqdm(range(n_repetitions), desc="repetitions"):
         # instantiate the agent
         if agent_type == "Dyna":
             agent = DynaAgent(
@@ -82,10 +83,10 @@ def run_repetitions(
 
 
 def experiment():
-    n_timesteps = 10#001
-    eval_interval = 2#50
-    n_repetitions = 1#0
-    max_episode_length = 30#0
+    n_timesteps = 10001
+    eval_interval = 250
+    n_repetitions = 10
+    max_episode_length = 100
     gamma = 1.0
     learning_rate = 0.2
     epsilon = 0.1
@@ -139,6 +140,47 @@ def experiment():
 
 
     # Assignment 2 - Prioritized Sweeping
+    print("PS")
+    ps_best_n_plan_updt_arr = np.full(len(wind_proportions), n_planning_updates_arr[0])
+    ps_best_aucs = np.full(len(wind_proportions), -np.inf)
+    for i in range(len(wind_proportions)):
+        wind_prop = wind_proportions[i]
+        env = WindyGridworld(wind_proportion=wind_prop)
+        PS_plot = LearningCurvePlot(title=f"PS learning curves with {wind_prop} chane of wind")
+        Q_curve = run_repetitions(
+            env=env,
+            agent_type="Dyna",
+            n_repetitions=n_repetitions,
+            n_timesteps=n_timesteps,
+            max_episode_length=max_episode_length,
+            eval_interval=eval_interval,
+            learning_rate=learning_rate,
+            gamma=gamma,
+            n_planning_updates=0,
+            epsilon=epsilon
+        )
+        PS_plot.add_curve(range(len(Q_curve)), smooth(Q_curve, smoothing_window), label='Q-learning curve (baseline)')
+        for n_planning_updates in tqdm(n_planning_updates_arr, desc="planning updates"):
+            curve = run_repetitions(
+                env=env,
+                agent_type="PS",
+                n_repetitions=n_repetitions,
+                n_timesteps=n_timesteps,
+                max_episode_length=max_episode_length,
+                eval_interval=eval_interval,
+                learning_rate=learning_rate,
+                gamma=gamma,
+                n_planning_updates=n_planning_updates,
+                epsilon=epsilon
+            )
+            PS_plot.add_curve(range(len(curve)), smooth(curve, smoothing_window),
+                              label=f"n_planning_updates={n_planning_updates}")
+            curve_auc = np.trapz(curve)
+            if curve_auc > ps_best_aucs[i]:
+                ps_best_n_plan_updt_arr[i] = n_planning_updates
+                ps_best_aucs[i] = curve_auc
+
+        PS_plot.save(f"PS_w{i}")
 
 
 if __name__ == '__main__':

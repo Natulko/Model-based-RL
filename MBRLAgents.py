@@ -131,6 +131,8 @@ class PrioritizedSweepingAgent:
 
         # Update Q-table with the states from the queue
         for _ in range(n_planning_updates):
+            if self.queue.empty():
+                break
             _, (state, action) = self.queue.get()
             state_next = np.random.choice(range(self.n_states), p=self.trans_prob[state, action])
             reward = self.avg_reward[state, action, state_next]
