@@ -36,6 +36,7 @@ class DynaAgent:
 
     def update(self, s, a, r, done, s_next, n_planning_updates):
         # Dyna update
+
         # Updates
         self.n_sas[s, a, s_next] += 1
         self.R_sum[s, a, s_next] += r
@@ -45,10 +46,12 @@ class DynaAgent:
             self.avg_reward[s, a, state_index] = \
                 self.R_sum[s, a, state_index] / self.n_sas[s, a, state_index] if self.n_sas[s, a, state_index] != 0 else 0
 
+        # Update Q-values table
         self.Q_sa[s, a] = \
             self.Q_sa[s, a] + self.learning_rate * (r + self.gamma * np.max(self.Q_sa[s_next]) - self.Q_sa[s, a])
 
-        for i in range(n_planning_updates):
+        # Update previous Q-table with previous steps
+        for _ in range(n_planning_updates):
             # selection random previously observed state and action taken in that state
             mask = self.n_sas > 0
             indices = np.argwhere(mask)
@@ -88,13 +91,19 @@ class PrioritizedSweepingAgent:
         self.learning_rate = learning_rate
         self.gamma = gamma
         self.priority_cutoff = priority_cutoff
-
         self.Q_sa = np.zeros((n_states, n_actions))
         # TO DO: Initialize count tables, reward sum tables, priority queue
+        self.n_sas = np.zeros((n_states, n_actions, n_states))
+        self.R_sum = np.zeros((n_states, n_actions, n_states))
+        self.trans_prob = np.zeros((n_states, n_actions, n_states))
+        self.avg_reward = np.zeros((n_states, n_actions, n_states))
+        self.queue = PriorityQueue()
 
     def select_action(self, s, epsilon):
-        # TODO: Change this to e-greedy action selection
-        a = np.random.randint(0, self.n_actions)  # Replace this with correct action selection
+        # e-greedy action selection
+        a = np.argmax(self.Q_sa[s])
+        if random.random() < epsilon:
+            a = random.choice(range(self.n_actions))
         return a
 
     def update(self, s, a, r, done, s_next, n_planning_updates):
@@ -106,7 +115,41 @@ class PrioritizedSweepingAgent:
         # self.queue.put((-p,(s,a))) 
         # Retrieve the top (s,a) from the queue
         # _,(s,a) = self.queue.get() # get the top (s,a) for the queue
-        pass
+
+        # Updates
+        self.n_sas[s, a, s_next] += 1
+        self.R_sum[s, a, s_next] += r
+        for state_index in range(self.n_states):
+            self.trans_prob[s, a, state_index] = \
+                self.n_sas[s, a, state_index] / np.sum(self.n_sas[s, a]) if np.sum(self.n_sas[s, a]) != 0 else 0
+            self.avg_reward[s, a, state_index] = \
+                self.R_sum[s, a, state_index] / self.n_sas[s, a, state_index] if self.n_sas[s, a, state_index] != 0 else 0
+
+        p = abs(r + self.gamma * np.max(self.Q_sa[s_next]) - self.Q_sa[s, a])
+        if p > self.priority_cutoff:
+            self.queue.put((-p, (s, a)))
+
+        # Update Q-table with the states from the queue
+        for _ in range(n_planning_updates):
+            _, (state, action) = self.queue.get()
+            state_next = np.random.choice(range(self.n_states), p=self.trans_prob[state, action])
+            reward = self.avg_reward[state, action, state_next]
+            self.Q_sa[state, action] = \
+                self.Q_sa[state, action] + \
+                self.learning_rate * (reward + self.gamma * np.max(self.Q_sa[state_next]) - self.Q_sa[state, action])
+
+            # Get over all actions, that may lead to state "state"
+            prev_states_actions = self.trans_prob[:, :, state]
+            mask = prev_states_actions > 0
+            prev_state_action_pairs = np.argwhere(mask)
+
+            for prev_state, prev_action in prev_state_action_pairs:
+                r_bar = self.avg_reward[prev_state, prev_action, state]
+                priority = abs(r_bar + self.gamma * np.max(self.Q_sa[state]) - self.Q_sa[prev_state, prev_action])
+
+                # Add the previous pair into the priority queue if priority exceeds the treshold
+                if priority > self.priority_cutoff:
+                    self.queue.put((-priority, (prev_state, prev_action)))
 
     def evaluate(self, eval_env, n_eval_episodes=30, max_episode_length=100):
         returns = []  # list to store the reward per episode
@@ -131,7 +174,7 @@ def ttest():
     gamma = 1.0
 
     # Algorithm parameters
-    policy = 'dyna'  # or 'ps'
+    policy = 'ps'  # or 'dyna'
     epsilon = 0.1
     learning_rate = 0.2
     n_planning_updates = 3
@@ -159,8 +202,6 @@ def ttest():
         a = pi.select_action(s, epsilon)
         s_next, r, done = env.step(a)
         pi.update(s=s, a=a, r=r, done=done, s_next=s_next, n_planning_updates=n_planning_updates)
-
-        print(t)
 
         # Render environment
         if plot:
