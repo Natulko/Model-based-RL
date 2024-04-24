@@ -15,7 +15,7 @@ class LearningCurvePlot:
 
     def __init__(self,title=None):
         self.fig,self.ax = plt.subplots()
-        self.ax.set_xlabel('Interval')
+        self.ax.set_xlabel('Interval #')
         self.ax.set_ylabel('Episode Return')      
         if title is not None:
             self.ax.set_title(title)
