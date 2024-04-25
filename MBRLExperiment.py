@@ -248,7 +248,7 @@ def experiment():
             label=f'PS learning curve (n_pln_updt={dyna_best_n_plan_updt_arr[i]})'
         )
 
-        comparison_plot.save("comparison")
+        comparison_plot.save(f"comparison_w{i}")
 
 
 if __name__ == '__main__':
