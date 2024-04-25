@@ -96,6 +96,7 @@ class PrioritizedSweepingAgent:
         self.n_sas = np.zeros((n_states, n_actions, n_states))
         self.R_sum = np.zeros((n_states, n_actions, n_states))
         self.trans_prob = np.zeros((n_states, n_actions, n_states))
+        self.trans_prob_back = np.zeros((n_states, n_actions, n_states))
         self.avg_reward = np.zeros((n_states, n_actions, n_states))
         self.queue = PriorityQueue()
 
@@ -121,9 +122,14 @@ class PrioritizedSweepingAgent:
         self.R_sum[s, a, s_next] += r
         for state_index in range(self.n_states):
             self.trans_prob[s, a, state_index] = \
-                self.n_sas[s, a, state_index] / np.sum(self.n_sas[s, a]) if np.sum(self.n_sas[s, a]) != 0 else 0
+                self.n_sas[s, a, state_index] / np.sum(self.n_sas[s, a]) \
+                if np.sum(self.n_sas[s, a]) != 0 else 0
+            self.trans_prob_back[s, a, state_index] = \
+                self.n_sas[s, a, state_index] / np.sum(self.n_sas[:, :, state_index]) \
+                if np.sum(self.n_sas[:, :, state_index]) != 0 else 0
             self.avg_reward[s, a, state_index] = \
-                self.R_sum[s, a, state_index] / self.n_sas[s, a, state_index] if self.n_sas[s, a, state_index] != 0 else 0
+                self.R_sum[s, a, state_index] / self.n_sas[s, a, state_index] \
+                if self.n_sas[s, a, state_index] != 0 else 0
 
         p = abs(r + self.gamma * np.max(self.Q_sa[s_next]) - self.Q_sa[s, a])
         if p > self.priority_cutoff:
@@ -141,7 +147,7 @@ class PrioritizedSweepingAgent:
                 self.learning_rate * (reward + self.gamma * np.max(self.Q_sa[state_next]) - self.Q_sa[state, action])
 
             # Get over all actions, that may lead to state "state"
-            prev_states_actions = self.trans_prob[:, :, state]
+            prev_states_actions = self.trans_prob_back[:, :, state]
             mask = prev_states_actions > 0
             prev_state_action_pairs = np.argwhere(mask)
 
@@ -149,7 +155,7 @@ class PrioritizedSweepingAgent:
                 r_bar = self.avg_reward[prev_state, prev_action, state]
                 priority = abs(r_bar + self.gamma * np.max(self.Q_sa[state]) - self.Q_sa[prev_state, prev_action])
 
-                # Add the previous pair into the priority queue if priority exceeds the treshold
+                # Add the previous pair into the priority queue if priority exceeds the threshold
                 if priority > self.priority_cutoff:
                     self.queue.put((-priority, (prev_state, prev_action)))
 

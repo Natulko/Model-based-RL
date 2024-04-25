@@ -92,6 +92,7 @@ def experiment():
     gamma = 1.0
     learning_rate = 0.2
     epsilon = 0.1
+    window_size = 15
 
     wind_proportions = [0.9, 1.0]
     n_planning_updates_arr = [1, 3, 5]
@@ -116,7 +117,8 @@ def experiment():
             n_planning_updates=0,
             epsilon=epsilon
         )
-        Dyna_plot.add_curve(range(len(Q_curve)), Q_curve, label='Q-learning curve (baseline)')
+        Dyna_plot.add_curve(range(len(Q_curve)), smooth(Q_curve, window_size),
+                            label='Q-learning curve (baseline)')
         for n_planning_updates in tqdm(n_planning_updates_arr):
             curve = run_repetitions(
                 env=env,
@@ -130,13 +132,14 @@ def experiment():
                 n_planning_updates=n_planning_updates,
                 epsilon=epsilon
             )
-            Dyna_plot.add_curve(range(len(curve)), curve, label=f"n_planning_updates={n_planning_updates}")
+            Dyna_plot.add_curve(range(len(curve)), smooth(curve, window_size),
+                                label=f"n_planning_updates={n_planning_updates}")
             curve_auc = np.trapz(curve)
             if curve_auc > dyna_best_aucs[i]:
                 dyna_best_n_plan_updt_arr[i] = n_planning_updates
                 dyna_best_aucs[i] = curve_auc
 
-        Dyna_plot.save(f"Dyna_w{i}")
+    dyna_best_n_plan_updt_arr = np.array([3, 5])
 
     # Assignment 2 - Prioritized Sweeping
     print("PS")
@@ -158,7 +161,8 @@ def experiment():
             n_planning_updates=0,
             epsilon=epsilon
         )
-        PS_plot.add_curve(range(len(Q_curve)), Q_curve, label='Q-learning curve (baseline)')
+        PS_plot.add_curve(range(len(Q_curve)), smooth(Q_curve, window_size),
+                          label='Q-learning curve (baseline)')
         for n_planning_updates in tqdm(n_planning_updates_arr, desc="planning updates"):
             curve = run_repetitions(
                 env=env,
@@ -172,7 +176,8 @@ def experiment():
                 n_planning_updates=n_planning_updates,
                 epsilon=epsilon
             )
-            PS_plot.add_curve(range(len(curve)), curve, label=f"n_planning_updates={n_planning_updates}")
+            PS_plot.add_curve(range(len(curve)), smooth(curve, window_size),
+                              label=f"n_planning_updates={n_planning_updates}")
             curve_auc = np.trapz(curve)
             if curve_auc > ps_best_aucs[i]:
                 ps_best_n_plan_updt_arr[i] = n_planning_updates
@@ -207,7 +212,8 @@ def experiment():
             n_planning_updates=0,
             epsilon=epsilon
         )
-        comparison_plot.add_curve(range(len(Q_curve)), Q_curve, label='Q-learning curve (baseline)')
+        comparison_plot.add_curve(range(len(Q_curve)), smooth(Q_curve, window_size),
+                                  label='Q-learning curve (baseline)')
         Dyna_curve = run_repetitions(
             env=env,
             agent_type="Dyna",
@@ -221,7 +227,8 @@ def experiment():
             epsilon=epsilon
         )
         comparison_plot.add_curve(
-            range(len(Dyna_curve)), Dyna_curve, label=f'Dyna learning curve (n_pln_updt={dyna_best_n_plan_updt_arr[i]})'
+            range(len(Dyna_curve)), smooth(Dyna_curve, window_size),
+            label=f'Dyna learning curve (n_pln_updt={dyna_best_n_plan_updt_arr[i]})'
         )
         PS_curve = run_repetitions(
             env=env,
@@ -236,7 +243,8 @@ def experiment():
             epsilon=epsilon
         )
         comparison_plot.add_curve(
-            range(len(PS_curve)), PS_curve, label=f'PS learning curve (n_pln_updt={dyna_best_n_plan_updt_arr[i]})'
+            range(len(PS_curve)), smooth(PS_curve, window_size),
+            label=f'PS learning curve (n_pln_updt={dyna_best_n_plan_updt_arr[i]})'
         )
 
         comparison_plot.save("comparison")
