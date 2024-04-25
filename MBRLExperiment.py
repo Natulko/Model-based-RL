@@ -105,7 +105,7 @@ def experiment():
     for i in range(len(wind_proportions)):
         wind_prop = wind_proportions[i]
         env = WindyGridworld(wind_proportion=wind_prop)
-        Dyna_plot = LearningCurvePlot(title=f"Dyna learning curves with {wind_prop} chane of wind")
+        Dyna_plot = LearningCurvePlot(title=f"Dyna learning curves with {wind_prop} chance of wind")
         Q_curve = run_repetitions(
             env=env,
             agent_type="Dyna",
@@ -149,7 +149,7 @@ def experiment():
     for i in range(len(wind_proportions)):
         wind_prop = wind_proportions[i]
         env = WindyGridworld(wind_proportion=wind_prop)
-        PS_plot = LearningCurvePlot(title=f"PS learning curves with {wind_prop} chane of wind")
+        PS_plot = LearningCurvePlot(title=f"PS learning curves with {wind_prop} chance of wind")
         Q_curve = run_repetitions(
             env=env,
             agent_type="Dyna",
@@ -200,7 +200,7 @@ def experiment():
     for i in range(len(wind_proportions)):
         wind_prop = wind_proportions[i]
         env = WindyGridworld(wind_proportion=wind_prop)
-        comparison_plot = LearningCurvePlot(title=f"Comparison plot with {wind_prop} chane of wind")
+        comparison_plot = LearningCurvePlot(title=f"Comparison plot with {wind_prop} chance of wind")
         Q_curve = run_repetitions(
             env=env,
             agent_type="Dyna",
