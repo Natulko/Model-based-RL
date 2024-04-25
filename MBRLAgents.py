@@ -20,10 +20,11 @@ class DynaAgent:
         self.n_actions = n_actions
         self.learning_rate = learning_rate
         self.gamma = gamma
+        # Initialize Q value table table, count table, and reward sum tables.
         self.Q_sa = np.zeros((n_states, n_actions))
-        # TO DO: Initialize count tables, and reward sum tables.
         self.n_sas = np.zeros((n_states, n_actions, n_states))
         self.R_sum = np.zeros((n_states, n_actions, n_states))
+        # Initiailize stimated transition probabilities and rewards.
         self.trans_prob = np.zeros((n_states, n_actions, n_states))
         self.avg_reward = np.zeros((n_states, n_actions, n_states))
 
@@ -37,7 +38,7 @@ class DynaAgent:
     def update(self, s, a, r, done, s_next, n_planning_updates):
         # Dyna update
 
-        # Updates
+        # Update model
         self.n_sas[s, a, s_next] += 1
         self.R_sum[s, a, s_next] += r
         for state_index in range(self.n_states):
@@ -50,17 +51,17 @@ class DynaAgent:
         self.Q_sa[s, a] = \
             self.Q_sa[s, a] + self.learning_rate * (r + self.gamma * np.max(self.Q_sa[s_next]) - self.Q_sa[s, a])
 
-        # Update previous Q-table with previous steps
+        # Planning (Update previous Q-table with previous steps)
         for _ in range(n_planning_updates):
-            # selection random previously observed state and action taken in that state
+            # selection of random previously observed state and action taken in that state
             mask = self.n_sas > 0
             indices = np.argwhere(mask)
             random_indices = indices[np.random.choice(indices.shape[0])]
             state, action = random_indices[:2]
-
+            # simulated experience
             state_next = np.random.choice(range(self.n_states), p=self.trans_prob[state, action])
             reward = self.avg_reward[state, action, state_next]
-
+            # update Q-values table
             self.Q_sa[state, action] = \
                 self.Q_sa[state, action] + \
                 self.learning_rate * (reward + self.gamma * np.max(self.Q_sa[state_next]) - self.Q_sa[state, action])
@@ -92,12 +93,14 @@ class PrioritizedSweepingAgent:
         self.gamma = gamma
         self.priority_cutoff = priority_cutoff
         self.Q_sa = np.zeros((n_states, n_actions))
-        # TO DO: Initialize count tables, reward sum tables, priority queue
+        # Initialize Q value table table, count table, and reward sum tables.
         self.n_sas = np.zeros((n_states, n_actions, n_states))
         self.R_sum = np.zeros((n_states, n_actions, n_states))
         self.trans_prob = np.zeros((n_states, n_actions, n_states))
+        # Initiailize stimated transition probabilities and rewards.
         self.trans_prob_back = np.zeros((n_states, n_actions, n_states))
         self.avg_reward = np.zeros((n_states, n_actions, n_states))
+        # Initialize priority queue.
         self.queue = PriorityQueue()
 
     def select_action(self, s, epsilon):
@@ -117,7 +120,7 @@ class PrioritizedSweepingAgent:
         # Retrieve the top (s,a) from the queue
         # _,(s,a) = self.queue.get() # get the top (s,a) for the queue
 
-        # Updates
+        # Update model
         self.n_sas[s, a, s_next] += 1
         self.R_sum[s, a, s_next] += r
         for state_index in range(self.n_states):
@@ -135,7 +138,7 @@ class PrioritizedSweepingAgent:
         if p > self.priority_cutoff:
             self.queue.put((-p, (s, a)))
 
-        # Update Q-table with the states from the queue
+        # Planning (Update Q-table with the states from the queue)
         for _ in range(n_planning_updates):
             if self.queue.empty():
                 break

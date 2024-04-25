@@ -71,6 +71,7 @@ def run_repetitions(
                 learning_rate=kwargs["learning_rate"],
                 gamma=kwargs["gamma"]
             )
+        # run episodes
         repetition_curve = run_repetition(
             env,
             agent,
