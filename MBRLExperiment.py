@@ -139,7 +139,7 @@ def experiment():
                 dyna_best_n_plan_updt_arr[i] = n_planning_updates
                 dyna_best_aucs[i] = curve_auc
 
-    dyna_best_n_plan_updt_arr = np.array([3, 5])
+        Dyna_plot.save(f"Dyna_w{i}")
 
     # Assignment 2 - Prioritized Sweeping
     print("PS")
