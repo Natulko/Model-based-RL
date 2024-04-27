@@ -111,14 +111,7 @@ class PrioritizedSweepingAgent:
         return a
 
     def update(self, s, a, r, done, s_next, n_planning_updates):
-
-        # TO DO: Add Prioritized Sweeping code
-
-        # Helper code to work with the queue
-        # Put (s,a) on the queue with priority p (needs a minus since the queue pops the smallest priority first)
-        # self.queue.put((-p,(s,a))) 
-        # Retrieve the top (s,a) from the queue
-        # _,(s,a) = self.queue.get() # get the top (s,a) for the queue
+        # Prioritized sweeping update
 
         # Update model
         self.n_sas[s, a, s_next] += 1
