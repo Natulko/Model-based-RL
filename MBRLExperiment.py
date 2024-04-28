@@ -6,9 +6,6 @@ Practical for course 'Reinforcement Learning',
 Bachelor AI, Leiden University, The Netherlands
 By Thomas Moerland
 """
-from tqdm import tqdm
-import json
-
 import numpy as np
 from MBRLEnvironment import WindyGridworld
 from MBRLAgents import DynaAgent, PrioritizedSweepingAgent
@@ -26,7 +23,7 @@ def run_repetition(
     rewards_arr = []
     s = env.reset()
     counter = 1
-    for n_timestep in tqdm(range(n_timesteps), desc="repetition"):
+    for n_timestep in range(n_timesteps):
         a = agent.select_action(s, kwargs["epsilon"])
         s_next, r, done = env.step(a)
         agent.update(s, a, r, done, s_next, kwargs["n_planning_updates"])
@@ -56,7 +53,7 @@ def run_repetitions(
         **kwargs
 ) -> np.ndarray:
     curve = np.zeros((n_timesteps - 1) // eval_interval + 1)
-    for _ in tqdm(range(n_repetitions), desc="repetitions"):
+    for _ in range(n_repetitions):
         # instantiate the agent
         if agent_type == "Dyna":
             agent = DynaAgent(
@@ -122,7 +119,7 @@ def experiment():
         )
         Dyna_plot.add_curve(range(len(Q_curve)), smooth(Q_curve, window_size),
                             label='Q-learning curve (baseline)')
-        for n_planning_updates in tqdm(n_planning_updates_arr):
+        for n_planning_updates in n_planning_updates_arr:
             curve = run_repetitions(
                 env=env,
                 agent_type="Dyna",
@@ -168,7 +165,7 @@ def experiment():
         )
         PS_plot.add_curve(range(len(Q_curve)), smooth(Q_curve, window_size),
                           label='Q-learning curve (baseline)')
-        for n_planning_updates in tqdm(n_planning_updates_arr, desc="planning updates"):
+        for n_planning_updates in n_planning_updates_arr:
             curve = run_repetitions(
                 env=env,
                 agent_type="PS",
@@ -192,13 +189,13 @@ def experiment():
         PS_plot.save(f"PS_w{i}")
 
     # Saving best params just in case
-    best_params = {
-        "wind": wind_proportions,
-        "Dyna_n_planning_updates": dyna_best_n_plan_updt_arr.tolist(),
-        "PS_n_planning_updates": ps_best_n_plan_updt_arr.tolist()
-    }
-    with open("best_params.json", "w+") as file:
-        json.dump(best_params, file)
+    # best_params = {
+    #     "wind": wind_proportions,
+    #     "Dyna_n_planning_updates": dyna_best_n_plan_updt_arr.tolist(),
+    #     "PS_n_planning_updates": ps_best_n_plan_updt_arr.tolist()
+    # }
+    # with open("best_params.json", "w+") as file:
+    #     json.dump(best_params, file)
 
     # Assignment 3 - Comparison
     print("Comparison")
